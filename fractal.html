@@ -1,0 +1,142 @@
+<html>
+	<head>
+	<title>Julia Set Generator</title>
+	<script src="math.min.js"></script>
+	<script src="jquery.min.js"></script>
+	<script src="jquery-ui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="jquery-ui.min.css" ></link>
+
+	<script>	
+	$(document).ready(function() {
+		$( "#c-dialog" ).dialog({
+			autoOpen: false, 
+			width: 400,
+			buttons: {
+				OK: function() {
+				$(this).dialog("close");
+					createJulia();
+				}
+			},
+			position: {
+				at: "center"
+			}
+		});		
+			
+		$( "#errDialog" ).dialog({
+			autoOpen: false, 
+			buttons: {
+				OK: function() {
+				$(this).dialog("close");
+				}
+			},
+			position: {
+				at: "center"
+			}
+		});				
+			
+		function generate(x0, y0, c, maxIter) {
+			var i = 0;
+			var z0 = math.complex(c);
+		
+			var z = math.complex(x0,y0); 
+			while (math.abs(z) <= 2 && i < maxIter){
+				z = math.add(math.square(z), z0);
+				i++
+			}
+			return i;
+		}
+
+		function colorPix(pix, pos, i, iterations){
+			if (i > iterations) {
+				pix[pos] = 0;
+				pix[pos + 1] = 0;
+				pix[pos + 2] = 0;
+			} else {
+				var r = 3 * math.log(i) / math.log(iterations);
+				
+				if (r < 1) {
+					pix[pos] = 0;
+					pix[pos + 1] = 0;
+					pix[pos + 2] = 255 * r;
+				}
+				else if ( r < 2 ) {
+					pix[pos] = 0;
+					pix[pos + 1] = 255 * (r - 1);
+					pix[pos + 2] = 0;
+				} else {
+					pix[pos] = 255 * (r-2);
+					pix[pos + 1] = 255;
+					pix[pos + 2] = 255;
+				}
+			}
+			pix[pos + 3] = 255;
+		}
+	 
+		function julia(canvas, iterations, c) {
+			var width = canvas.width;
+			var height = canvas.height;
+	 
+			var ctx = canvas.getContext('2d');
+			var img = ctx.getImageData(0, 0, width, height);
+			var pix = img.data;
+	 
+			for (var ix = 0; ix < width; ++ix) {
+				for (var iy = 0; iy < height; ++iy) {  
+				
+				var x = -1.5 + 3*ix / width;
+				var y =  -1 + 2*iy / height;
+		  
+				var i = generate(x, y, c, iterations);
+				var pos = 4 * (width * iy + ix);
+				colorPix(pix, pos, i, iterations);
+			}
+		}
+	 
+		ctx.putImageData(img, 0, 0);
+		console.log("finish");
+	}
+	 
+	 
+		function createJulia(){
+			var equation = $('#equation');
+			var c = $('#c-value').val();
+			try {
+				var test = math.complex(c);
+			} catch (err){
+				console.log(err);
+				$( "#errDialog" ).dialog("open");
+				return;
+			}	
+		
+			equation.html('f(z) = z<sup>2</sup> + (' + c + ')' );
+	 
+			var canvas = $('#julia').get(0);
+			canvas.width = 800;
+			canvas.height = 600;
+	 
+			julia(canvas, 2000, c);
+		}
+
+		$( "#c-dialog" ).dialog( "open" );
+		
+	});
+		
+	</script>
+	
+	</head>
+
+	<body>
+		<div style="font-family:Arial; font-weight: bold; font-size: 12px" id="equation"></div>
+		<canvas id="julia"></canvas>
+		<div id="c-dialog" title="Julia Set Generator">
+			<div>Enter value for complex number c: (ex. -0.7-0.3i)</div>
+			<div>
+				<input id="c-value" />
+			</div>
+		</div>	
+		<div id="errDialog" title="Error">
+			<div>Input is not a complex number!</div>
+		</div>		
+	</body>
+
+</html>
